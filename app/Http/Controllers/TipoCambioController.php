@@ -47,10 +47,7 @@ class TipoCambioController extends Controller
 
         try {
             $response = $client->TipoCambioRango($params);
-
-            // Accede a la respuesta como necesites
             $resultado = $response->TipoCambioRangoResult;
-
             return $resultado;
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
@@ -66,33 +63,52 @@ class TipoCambioController extends Controller
             $fechaFin = \DateTime::createFromFormat('Y-m-d', $request->input('fechafin'))->format('Y-d-m');
 
             // Consumir el SOAP API y obtener las tasas de cambio
-            $tasas_cambio = $tasas_cambio = $this->obtenerTipoCambio($fechaInicio, $fechaFin);
+            $result = $this->obtenerTipoCambio($fechaInicio, $fechaFin);
+
+            $tasasCambio  = json_decode(json_encode($result->Vars->Var), true);
+            $totalItems  = json_decode(json_encode($result->TotalItems), true);
 
             // Calcular el promedio de venta y compra
-            $ventaTotal = array_sum(array_column($tasas_cambio->Vars->Var, 'venta'));
-            $compraTotal = array_sum(array_column($tasas_cambio->Vars->Var, 'compra'));
-            $totalItems = $tasas_cambio->TotalItems;
+            $ventaTotal = array_sum(array_column($tasasCambio , 'venta'));
+            $compraTotal = array_sum(array_column($tasasCambio , 'compra'));
 
-            $ventaPromedio = $ventaTotal / $totalItems;
-            $compraPromedio = $compraTotal / $totalItems;
+            if ($totalItems > 1) {
+                $moneda = $tasasCambio[0]['moneda'];
+                $ventaPromedio = $ventaTotal / $totalItems;
+                $compraPromedio = $compraTotal / $totalItems;
+            } else {
+                $moneda = $tasasCambio['moneda'];
+                $ventaPromedio = $tasasCambio['venta'];
+                $compraPromedio = $tasasCambio['compra'];
+            }
 
             // Guardar el promedio en la base de datos
             $tasa = new TasaCambio(); // Asegúrate de que TasaCambio es el nombre correcto del modelo
-            $tasa->moneda = $tasas_cambio->Vars->Var[0]->moneda;
+            $tasa->moneda = $moneda;
             $tasa->fecha_inicio = $request->input('fechainit');
             $tasa->fecha_fin = $request->input('fechafin');
             $tasa->venta_promedio = $ventaPromedio;
             $tasa->compra_promedio = $compraPromedio;
             $tasa->save();
 
-            foreach ($tasas_cambio->Vars->Var as $rg) {
+            if ($totalItems > 1) {
+                foreach ($tasasCambio as $rg) {
+                    $tasa_det = new TasaCambioDetalle();
+                    $tasa_det->tasa_cambio_id = $tasa->id;
+                    $tasa_det->fecha = Carbon::createFromFormat('d/m/Y', $rg['fecha']);
+                    $tasa_det->venta = $rg['venta'];
+                    $tasa_det->compra = $rg['compra'];
+                    $tasa_det->save();
+                }
+            } else {
                 $tasa_det = new TasaCambioDetalle();
                 $tasa_det->tasa_cambio_id = $tasa->id;
-                $tasa_det->fecha = Carbon::createFromFormat('d/m/Y', $rg->fecha);;
-                $tasa_det->venta = $rg->venta;
-                $tasa_det->compra = $rg->compra;
+                $tasa_det->fecha = Carbon::createFromFormat('d/m/Y', $tasasCambio['fecha']);
+                $tasa_det->venta = $tasasCambio['venta'];
+                $tasa_det->compra = $tasasCambio['compra'];
                 $tasa_det->save();
             }
+
 
             // Commit de la transacción
             DB::commit();
