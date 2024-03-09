@@ -22,3 +22,4 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 Route::get('/variables-disponibles', [TipoCambioController::class, 'obtenerVariablesDisponibles']);
 Route::get('/tasas-cambio', [TipoCambioController::class, 'obtenerTasasCambio']);
 Route::post('/tasas-cambio', [TipoCambioController::class, 'store']);
+Route::delete('/tasas-cambio/{id}', [TipoCambioController::class, 'destroy']);

@@ -17,6 +17,7 @@ class TasaCambio extends Model
         'fecha_fin',
         'venta_promedio',
         'compra_promedio',
+        'estado',
     ];
 
     public function getCreatedAtAttribute($value)

@@ -32,7 +32,10 @@ class TipoCambioController extends Controller
 
     public function obtenerTasasCambio()
     {
-        $tasas = TasaCambio::with('detalles')->orderBy('id', 'desc')->paginate(50);
+        $tasas = TasaCambio::with('detalles')
+            ->where('estado', 1)
+            ->orderBy('id', 'desc')
+            ->paginate(50);
         return response()->json($tasas);
     }
 
@@ -41,8 +44,8 @@ class TipoCambioController extends Controller
         $client = new SoapClient('http://www.banguat.gob.gt/variables/ws/TipoCambio.asmx?WSDL');
 
         $params = [
-            'fechainit' => $fechaInicio, // formato dd/mm/aaaa
-            'fechafin' => $fechaFin, // formato dd/mm/aaaa
+            'fechainit' => $fechaInicio,
+            'fechafin' => $fechaFin,
         ];
 
         try {
@@ -82,8 +85,8 @@ class TipoCambioController extends Controller
                 $compraPromedio = $tasasCambio['compra'];
             }
 
-            // Guardar el promedio en la base de datos
-            $tasa = new TasaCambio(); // Asegúrate de que TasaCambio es el nombre correcto del modelo
+            // Guardar en la base de datos
+            $tasa = new TasaCambio();
             $tasa->moneda = $moneda;
             $tasa->fecha_inicio = $request->input('fechainit');
             $tasa->fecha_fin = $request->input('fechafin');
@@ -109,11 +112,8 @@ class TipoCambioController extends Controller
                 $tasa_det->save();
             }
 
-
-            // Commit de la transacción
             DB::commit();
 
-            // Retornar la respuesta JSON con los promedios
             return response()->json([
                 'id' => $tasa->id,
                 'fecha_init' => $request->input('fechainit'),
@@ -123,8 +123,22 @@ class TipoCambioController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            // Revertir la transacción en caso de error
             DB::rollback();
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function destroy($id)
+    {
+        try{
+            $tasa = TasaCambio::find($id);
+            $tasa->estado = 0;
+            $tasa->save();
+
+            return response()->json([
+                'id' => $tasa->id
+            ]);
+        } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }

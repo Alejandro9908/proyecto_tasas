@@ -20,6 +20,7 @@ class CreateTasaCambiosTable extends Migration
             $table->date('fecha_fin');
             $table->decimal('venta_promedio', 10, 5);
             $table->decimal('compra_promedio', 10, 5);
+            $table->integer('estado')->default(1);
             $table->timestamps();
         });
     }
