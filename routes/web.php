@@ -14,9 +14,9 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::get('/', function () {
+/*Route::get('/', function () {
     return view('welcome');
 });
 
 Route::get('/tipo-cambio/{fechaInicio}/{fechaFin}', [TipoCambioController::class, 'obtenerTipoCambio']);
-Route::get('/variables-disponibles', [TipoCambioController::class, 'obtenerVariablesDisponibles']);
+Route::get('/variables-disponibles', [TipoCambioController::class, 'obtenerVariablesDisponibles']);*/
