@@ -32,7 +32,7 @@ class TipoCambioController extends Controller
 
     public function obtenerTasasCambio()
     {
-        $tasas = TasaCambio::with('detalles')->orderBy('id', 'desc')->paginate(25);
+        $tasas = TasaCambio::with('detalles')->orderBy('id', 'desc')->paginate(50);
         return response()->json($tasas);
     }
 
